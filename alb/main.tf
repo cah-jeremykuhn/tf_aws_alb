@@ -40,8 +40,8 @@ resource "aws_s3_bucket" "log_bucket" {
 
 module "target_group_listeners" {
   source            = "./components"
-  count             = "${length(var.backend_port)}"
-  backend_port      = "${var.backend_port[count.index]}"
+  count             = "${length(var.backend_ports)}"
+  backend_port      = "${var.backend_ports[count.index]}"
   backend_protocol  = "${var.backend_protocol}"
   alb_protocols     = "${var.alb_protocols}"
   alb_name          = "${var.alb_name}"
