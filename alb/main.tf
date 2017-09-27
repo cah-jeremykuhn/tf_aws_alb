@@ -66,7 +66,7 @@ resource "aws_alb_target_group" "${var.backend_port[count.index]}" {
 
 resource "aws_alb_listener" "front_end_http" {
   load_balancer_arn = "${aws_alb.main.arn}"
-  port              = "80"
+  port              = "${var.backend_port}"
   protocol          = "HTTP"
 
   default_action {
