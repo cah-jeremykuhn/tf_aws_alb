@@ -30,7 +30,7 @@ variable "aws_account_id" {
   description = "AWS account ID."
 }
 
-variable "backend_port" {
+variable "backend_ports" {
   description = "The port the service on the EC2 instances listen on."
   default     = 443
 }

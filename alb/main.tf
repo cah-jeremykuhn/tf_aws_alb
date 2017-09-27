@@ -38,57 +38,16 @@ resource "aws_s3_bucket" "log_bucket" {
   tags = "${merge(var.tags, map("Name", format("%s", var.log_bucket)))}"
 }
 
-resource "aws_alb_target_group" "${var.backend_port[count.index]}" {
-  count    = "${length(var.backend_port)}"
-  name     = "${var.alb_name}-tg"
-  port     = "${var.backend_port[count.index]}"
-  protocol = "${upper(var.backend_protocol)}"
-  vpc_id   = "${var.vpc_id}"
-
-  health_check {
-    interval            = 30
-    path                = "${var.health_check_path}"
-    port                = "traffic-port"
-    healthy_threshold   = 3
-    unhealthy_threshold = 3
-    timeout             = 5
-    protocol            = "${var.backend_protocol}"
-  }
-
-  stickiness {
-    type            = "lb_cookie"
-    cookie_duration = "${var.cookie_duration}"
-    enabled         = "${ var.cookie_duration == 1 ? false : true}"
-  }
-
-  tags = "${merge(var.tags, map("Name", format("%s-tg", var.alb_name)))}"
-}
-
-resource "aws_alb_listener" "front_end_http" {
-  load_balancer_arn = "${aws_alb.main.arn}"
-  port              = "${var.backend_port[count.index]}"
-  protocol          = "HTTP"
-
-  default_action {
-    target_group_arn = "${aws_alb_target_group.var.backend_port[count.index].id}"
-    type             = "forward"
-  }
-
-  # should be 0 if no HTTP, otherwise length of var.backend_port
-  count = "${trimspace(element(split(",", var.alb_protocols), 1)) == "HTTP" || trimspace(element(split(",", var.alb_protocols), 2)) == "HTTP" ? length(var.backend_port) : 0}"
-}
-
-resource "aws_alb_listener" "front_end_https" {
-  load_balancer_arn = "${aws_alb.main.arn}"
-  port              = "${var.backend_port[count.index]}"
-  protocol          = "HTTPS"
+module "target_group_listeners" {
+  source            = "./components/target_group_listeners"
+  count             = "${length(var.backend_port)}"
+  backend_port      = "${var.backend_port[count.index]}"
+  backend_protocol  = "${var.backend_protocol}"
+  alb_protocols     = "${var.alb_protocols}"
+  alb_name          = "${var.alb_name}"
+  vpc_id            = "${var.vpc_id}"
+  health_check_path = "${var.health_check_path}"
+  cookie_duration   = "${var.cookie_duration}"
   certificate_arn   = "${var.certificate_arn}"
-  ssl_policy        = "ELBSecurityPolicy-2015-05"
-
-  default_action {
-    target_group_arn = "${aws_alb_target_group.var.backend_port[count.index].id}"
-    type             = "forward"
-  }
-  # should be 0 if no HTTPS, otherwise length of var.backend_port
-  count = "${trimspace(element(split(",", var.alb_protocols), 1)) == "HTTPS" || trimspace(element(split(",", var.alb_protocols), 2)) == "HTTPS" ? length(var.backend_port) : 0}"
+  tags              = "${var.tags}"
 }
