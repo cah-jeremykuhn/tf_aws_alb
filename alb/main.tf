@@ -66,7 +66,7 @@ resource "aws_alb_target_group" "${var.backend_port[count.index]}" {
 
 resource "aws_alb_listener" "front_end_http" {
   load_balancer_arn = "${aws_alb.main.arn}"
-  port              = "${var.backend_port}"
+  port              = "${var.backend_port[count.index]}"
   protocol          = "HTTP"
 
   default_action {
@@ -80,7 +80,7 @@ resource "aws_alb_listener" "front_end_http" {
 
 resource "aws_alb_listener" "front_end_https" {
   load_balancer_arn = "${aws_alb.main.arn}"
-  port              = "${var.backend_port}"
+  port              = "${var.backend_port[count.index]}"
   protocol          = "HTTPS"
   certificate_arn   = "${var.certificate_arn}"
   ssl_policy        = "ELBSecurityPolicy-2015-05"
