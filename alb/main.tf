@@ -38,9 +38,10 @@ resource "aws_s3_bucket" "log_bucket" {
   tags = "${merge(var.tags, map("Name", format("%s", var.log_bucket)))}"
 }
 
-resource "aws_alb_target_group" "target_group" {
+resource "aws_alb_target_group" "${var.backend_port[count.index]}" {
+  count    = "${length(var.backend_port)}"
   name     = "${var.alb_name}-tg"
-  port     = "${var.backend_port}"
+  port     = "${var.backend_port[count.index]}"
   protocol = "${upper(var.backend_protocol)}"
   vpc_id   = "${var.vpc_id}"
 
@@ -69,24 +70,25 @@ resource "aws_alb_listener" "front_end_http" {
   protocol          = "HTTP"
 
   default_action {
-    target_group_arn = "${aws_alb_target_group.target_group.id}"
+    target_group_arn = "${aws_alb_target_group.var.backend_port[count.index].id}"
     type             = "forward"
   }
 
-  count = "${trimspace(element(split(",", var.alb_protocols), 1)) == "HTTP" || trimspace(element(split(",", var.alb_protocols), 2)) == "HTTP" ? 1 : 0}"
+  # should be 0 if no HTTP, otherwise length of var.backend_port
+  count = "${trimspace(element(split(",", var.alb_protocols), 1)) == "HTTP" || trimspace(element(split(",", var.alb_protocols), 2)) == "HTTP" ? length(var.backend_port) : 0}"
 }
 
 resource "aws_alb_listener" "front_end_https" {
   load_balancer_arn = "${aws_alb.main.arn}"
-  port              = "443"
+  port              = "${var.backend_port}"
   protocol          = "HTTPS"
   certificate_arn   = "${var.certificate_arn}"
   ssl_policy        = "ELBSecurityPolicy-2015-05"
 
   default_action {
-    target_group_arn = "${aws_alb_target_group.target_group.id}"
+    target_group_arn = "${aws_alb_target_group.var.backend_port[count.index].id}"
     type             = "forward"
   }
-
-  count = "${trimspace(element(split(",", var.alb_protocols), 1)) == "HTTPS" || trimspace(element(split(",", var.alb_protocols), 2)) == "HTTPS" ? 1 : 0}"
+  # should be 0 if no HTTPS, otherwise length of var.backend_port
+  count = "${trimspace(element(split(",", var.alb_protocols), 1)) == "HTTPS" || trimspace(element(split(",", var.alb_protocols), 2)) == "HTTPS" ? length(var.backend_port) : 0}"
 }

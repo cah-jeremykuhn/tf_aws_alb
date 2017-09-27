@@ -32,7 +32,7 @@ variable "aws_account_id" {
 
 variable "backend_port" {
   description = "The port the service on the EC2 instances listen on."
-  default     = 80
+  default     = 443
 }
 
 variable "backend_protocol" {
@@ -98,5 +98,10 @@ variable "vpc_id" {
 
 variable "tags" {
   description = "A map of tags to add to all resources"
+  default     = {}
+}
+
+variable "ec2-instances" {
+  description = "A list of instances to attach to an ALB"
   default     = {}
 }
